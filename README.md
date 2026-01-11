@@ -1,7 +1,3 @@
-Backup of chiptuning.pw ECU database
-
-
-ALL ECUs:
 # ECU Numbers Database
 
 Extracted from chiptuning.pw ECU file names.
@@ -976,4 +972,5 @@ Extracted from chiptuning.pw ECU file names.
 - `06A906033BN`
 - `06A906033L`
 - `06F906056AN`
+
 - `07D906018C`
