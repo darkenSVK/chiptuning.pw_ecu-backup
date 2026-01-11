@@ -8,6 +8,7 @@ OUT_FILE = os.path.join(ROOT, "ecu_numbers.md")
 PATTERNS = [
     r"\b0\d{9}\b",                     # 028101xxxx, 026120xxxx
     r"\b\d{2}[A-Z]\d{6}[A-Z]{1,2}\b",   # 03G906021CG, 06A906032Q
+    r"\b\d{3}906\d{3}[A-Z]{1,2}\b",   # 038906012FA, 028906021JJ, 06A906032Q
     r"\b[0-9A-Z]{3}9060\d{3}[A-Z]{0,2}\b",  # 1K0907115, 8P0907115
 ]
 
