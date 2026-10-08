@@ -1,0 +1,30 @@
+name: Update ECU index
+
+# Spusti sa sam, ked pribudne/zmeni sa subor v ecu_files_* alebo build.py.
+# Da sa spustit aj rucne: Actions -> Update ECU index -> Run workflow
+on:
+  push:
+    paths:
+      - "ecu_files_*/**"
+      - "scripts/build.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Build index
+        run: python scripts/build.py
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ecu_index.json README.md
+          git diff --cached --quiet || (git commit -m "Update ECU index" && git push)
