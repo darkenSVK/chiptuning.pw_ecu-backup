@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECU Numbers Database – Bosch, VAG, Siemens ECU lookup</title>
+<meta name="description" content="Free searchable database of original ECU hardware and software numbers (Bosch 0281/0261, VAG 03G906021, 038906019, 06A906032...) extracted from 2341 real OEM ECU files. VW, Audi, Skoda, Seat, BMW, Opel, Peugeot, Citroen, Alfa Romeo.">
+<meta name="keywords" content="ECU number, ECU database, Bosch 0281, 0261, 03G906021, 038906019, EDC16, EDC17, ME7, original ECU file, ori file, WinOLS">
+<meta property="og:title" content="ECU Numbers Database">
+<meta property="og:description" content="Search original ECU hardware/software numbers by brand.">
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --text:#1b1f24; --muted:#6a7380; --line:#e2e5ea;
+    --accent:#0b6bcb; --accent-soft:#e6f0fb; --hit:#fff1a8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1216; --card:#171b21; --text:#e6e9ee; --muted:#8b94a1; --line:#2a3039;
+      --accent:#4ea1ff; --accent-soft:#1a2a3d; --hit:#5a4b00;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 16px 60px}
+  h1{font-size:26px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 20px}
+  .sub a{color:var(--accent)}
+  .search{position:sticky;top:0;background:var(--bg);padding:10px 0 12px;z-index:2}
+  input{width:100%;padding:14px 16px;font-size:18px;border:2px solid var(--line);
+    border-radius:10px;background:var(--card);color:var(--text);
+    font-family:ui-monospace,Consolas,monospace;letter-spacing:.5px}
+  input:focus{outline:none;border-color:var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--text);
+    padding:5px 11px;border-radius:999px;cursor:pointer;font-size:13px}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chip small{opacity:.7;margin-left:4px}
+  .stat{color:var(--muted);font-size:13px;margin:6px 0 0}
+  .brand{margin-top:22px}
+  .brand h2{font-size:15px;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;
+    color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+  .num{background:var(--card);border:1px solid var(--line);border-radius:7px;
+    padding:7px 10px;font-family:ui-monospace,Consolas,monospace;font-size:14px;
+    cursor:pointer;transition:border-color .15s}
+  .num:hover{border-color:var(--accent)}
+  .num.copied{background:var(--accent-soft);border-color:var(--accent)}
+  .num .t{display:block;font-size:10px;color:var(--muted);font-family:system-ui,sans-serif}
+  mark{background:var(--hit);color:inherit;border-radius:2px}
+  .empty{text-align:center;color:var(--muted);padding:40px 0}
+  footer{margin-top:40px;color:var(--muted);font-size:12px;text-align:center}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ECU Numbers Database</h1>
+  <p class="sub">Original ECU identifiers extracted from 2341 real OEM ECU files (chiptuning.pw archive).
+    <a href="https://github.com/darkenSVK/chiptuning.pw_ecu-backup">GitHub</a></p>
+
+  <div class="search">
+    <input id="q" type="search" placeholder="Search e.g. 0281010, 03G906021, 038906019…" autocomplete="off" autofocus>
+    <div class="chips" id="chips"></div>
+    <p class="stat" id="stat">Loading…</p>
+  </div>
+
+  <div id="out"></div>
+
+  <footer>
+    For research, reference and archival purposes only. Click a number to copy it.<br>
+    Missing ECU? Open an issue on <a href="https://github.com/darkenSVK/chiptuning.pw_ecu-backup/issues">GitHub</a>.
+  </footer>
+</div>
+
+<script>
+const SOURCES = ["ecu_numbers.md", "README.md"];
+let DB = [];          // {brand, num, type}
+let brand = "ALL";
+
+function typeOf(n){
+  if (/^0281/.test(n)) return "Bosch diesel";
+  if (/^0261/.test(n)) return "Bosch petrol";
+  if (/^0\d{9}$/.test(n)) return "Bosch";
+  if (/906|907|997/.test(n)) return "OEM part no.";
+  return "";
+}
+
+function parse(md){
+  const rows = []; let cur = null;
+  for (const line of md.split(/\r?\n/)){
+    const h = line.match(/^##\s+(.+)/);
+    if (h){ cur = h[1].trim().toUpperCase(); continue; }
+    const m = line.match(/^\s*-\s*`?([0-9A-Z]+)`?\s*$/i);
+    if (cur && m) rows.push({brand:cur, num:m[1].toUpperCase(), type:typeOf(m[1].toUpperCase())});
+  }
+  return rows;
+}
+
+async function load(){
+  for (const src of SOURCES){
+    try{
+      const r = await fetch(src, {cache:"no-cache"});
+      if (!r.ok) continue;
+      const rows = parse(await r.text());
+      if (rows.length){ DB = rows; return; }
+    }catch(e){}
+  }
+}
+
+const norm = s => s.toUpperCase().replace(/[\s\-_.]/g,"");
+const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+function chips(){
+  const counts = {};
+  DB.forEach(r => counts[r.brand] = (counts[r.brand]||0)+1);
+  const brands = ["ALL", ...Object.keys(counts).sort()];
+  document.getElementById("chips").innerHTML = brands.map(b =>
+    `<button class="chip ${b===brand?"on":""}" data-b="${b}">${b}<small>${b==="ALL"?DB.length:counts[b]}</small></button>`
+  ).join("");
+}
+
+function render(){
+  const q = norm(document.getElementById("q").value);
+  const hits = DB.filter(r => (brand==="ALL"||r.brand===brand) && (!q || r.num.includes(q)));
+  const groups = {};
+  hits.forEach(r => (groups[r.brand] ||= []).push(r));
+
+  document.getElementById("stat").textContent =
+    `${hits.length} of ${DB.length} numbers` + (q ? ` matching "${q}"` : "");
+
+  const out = document.getElementById("out");
+  if (!hits.length){ out.innerHTML = `<div class="empty">No match. Try fewer characters.</div>`; return; }
+
+  out.innerHTML = Object.keys(groups).sort().map(b => `
+    <div class="brand"><h2>${b} · ${groups[b].length}</h2><div class="grid">
+    ${groups[b].map(r => {
+      const i = q ? r.num.indexOf(q) : -1;
+      const txt = i<0 ? esc(r.num)
+        : esc(r.num.slice(0,i)) + "<mark>"+esc(r.num.slice(i,i+q.length))+"</mark>" + esc(r.num.slice(i+q.length));
+      return `<div class="num" data-n="${r.num}">${txt}<span class="t">${r.type}</span></div>`;
+    }).join("")}
+    </div></div>`).join("");
+}
+
+document.getElementById("q").addEventListener("input", () => {
+  render();
+  const v = document.getElementById("q").value.trim();
+  try{ history.replaceState(null,"", v ? "#"+encodeURIComponent(v) : location.pathname); }catch(e){}
+});
+document.getElementById("chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  brand = b.dataset.b; chips(); render();
+});
+document.getElementById("out").addEventListener("click", e => {
+  const el = e.target.closest(".num"); if (!el) return;
+  navigator.clipboard?.writeText(el.dataset.n);
+  el.classList.add("copied"); setTimeout(() => el.classList.remove("copied"), 700);
+});
+
+(async () => {
+  await load();
+  if (!DB.length){
+    document.getElementById("stat").textContent = "Could not load ecu_numbers.md – put it next to index.html.";
+    return;
+  }
+  if (location.hash) document.getElementById("q").value = decodeURIComponent(location.hash.slice(1));
+  chips(); render();
+})();
+</script>
+</body>
+</html>
