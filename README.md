@@ -2074,6 +2074,7 @@ After adding files run `python scripts/build.py` to update the index and this RE
 - `4B0906018DA`
 - `4B0906018DP`
 - `4D0907560BR`
+- `5G0906259`
 - `6K0906025E`
 - `7L0907401`
 - `7L0907401D`
